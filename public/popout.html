@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Avatar - Floating View</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: oklch(0.12 0.01 250);
+            overflow: hidden;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        
+        #avatar-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .control-btn {
+            background: oklch(0.25 0.05 250);
+            border: 1px solid oklch(0.75 0.15 195);
+            color: oklch(0.95 0 0);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .control-btn:hover {
+            background: oklch(0.35 0.05 250);
+            box-shadow: 0 0 8px oklch(0.75 0.15 195 / 0.3);
+        }
+        
+        .info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: oklch(0.60 0.02 250);
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            background: oklch(0.15 0.01 250 / 0.8);
+            padding: 6px 10px;
+            border-radius: 4px;
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button class="control-btn" onclick="window.close()">✕ Close</button>
+    </div>
+    <div id="avatar-container"></div>
+    <div class="info">3D Avatar Lip Sync • Drag this window anywhere</div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.175.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="avatar.js"></script>
+    <script>
+        // Initialize avatar viewer for popout window
+        let avatarViewer = null;
+        let currentSettings = {
+            sensitivity: 2.5,
+            smoothing: 0.7,
+            minOpen: 0,
+            maxOpen: 1
+        };
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            const container = document.getElementById('avatar-container');
+            if (container) {
+                avatarViewer = new AvatarViewer(container);
+                avatarViewer.updateSettings(currentSettings);
+                
+                // Load default model
+                avatarViewer.loadModel('robot');
+            }
+        });
+        
+        // Listen for messages from parent window
+        window.addEventListener('message', (event) => {
+            if (!avatarViewer) return;
+            
+            const { type, level, settings, modelUrl } = event.data;
+            
+            switch (type) {
+                case 'audioLevel':
+                    avatarViewer.setAudioData(level);
+                    break;
+                    
+                case 'settings':
+                    currentSettings = settings;
+                    avatarViewer.updateSettings(settings);
+                    break;
+                    
+                case 'loadModel':
+                    avatarViewer.loadModel(modelUrl);
+                    break;
+            }
+        });
+        
+        // Notify parent that we're ready
+        if (window.opener) {
+            window.opener.postMessage({ type: 'popoutReady' }, '*');
+        }
+    </script>
+</body>
+</html>
