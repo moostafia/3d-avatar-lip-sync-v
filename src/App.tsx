@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { AvatarViewer } from './components/AvatarViewer'
 import { AudioVisualizer } from './components/AudioVisualizer'
 import { FloatingWindow } from './components/FloatingWindow'
+import { usePopoutWindow } from './components/PopoutWindow'
 import { useAudioAnalyzer } from './hooks/use-audio-analyzer'
 import { MODEL_PRESETS, DEFAULT_SETTINGS, type AudioSettings } from './lib/models'
 import { Button } from './components/ui/button'
@@ -33,6 +34,7 @@ function App() {
   const [isFloatingOpen, setIsFloatingOpen] = useState(false)
 
   const { audioLevel, isCapturing, error, startCapture, stopCapture } = useAudioAnalyzer()
+  const { isOpen: isPopoutOpen, openPopout, updatePopout, closePopout } = usePopoutWindow()
 
   const currentModel = useCustomModel && customModelUrl
     ? { url: customModelUrl, name: 'Custom Model' }
@@ -91,6 +93,29 @@ function App() {
       description: 'You can now drag the avatar anywhere on your screen'
     })
   }
+
+  const handleOpenPopoutWindow = () => {
+    openPopout({
+      modelUrl: currentModel.url,
+      audioData: audioLevel,
+      settings: settings || DEFAULT_SETTINGS,
+      onModelLoad: handleModelLoad
+    })
+    toast.success('Browser window opened', {
+      description: 'Drag this window anywhere on your desktop!'
+    })
+  }
+
+  useEffect(() => {
+    if (isPopoutOpen) {
+      updatePopout({
+        modelUrl: currentModel.url,
+        audioData: audioLevel,
+        settings: settings || DEFAULT_SETTINGS,
+        onModelLoad: handleModelLoad
+      })
+    }
+  }, [audioLevel, settings, currentModel.url, isPopoutOpen])
 
   return (
     <>
@@ -340,12 +365,23 @@ function App() {
 
           <div className="lg:sticky lg:top-6 h-[600px] lg:h-[calc(100vh-3rem)]">
             <Card className="h-full border-accent/20 overflow-hidden">
-              <div className="absolute top-4 right-4 z-10">
+              <div className="absolute top-4 right-4 z-10 flex gap-2">
                 <Button
                   onClick={handleOpenFloatingWindow}
                   variant="secondary"
                   size="sm"
                   className="gap-2 shadow-lg"
+                  title="Open in-page floating window"
+                >
+                  <ArrowsOutSimple size={16} />
+                  Float
+                </Button>
+                <Button
+                  onClick={handleOpenPopoutWindow}
+                  variant="default"
+                  size="sm"
+                  className="gap-2 shadow-lg"
+                  title="Open in separate browser window"
                 >
                   <ArrowsOutSimple size={16} />
                   Pop Out
