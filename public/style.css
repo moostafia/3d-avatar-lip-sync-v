@@ -643,8 +643,8 @@ details[open] .accordion-trigger::after {
 }
 
 .floating-content {
-    width: 500px;
-    height: 600px;
+    width: min(500px, 90vw);
+    height: min(600px, 80vh);
 }
 
 /* Toast Notifications */

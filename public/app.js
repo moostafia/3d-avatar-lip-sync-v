@@ -6,9 +6,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-// Make THREE globally available
+// Make THREE globally available for compatibility
 window.THREE = THREE;
-window.THREE.GLTFLoader = GLTFLoader;
 
 /**
  * Audio Analyzer Class
