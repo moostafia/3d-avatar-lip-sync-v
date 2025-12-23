@@ -23,6 +23,36 @@ export const MODEL_PRESETS: ModelPreset[] = [
     name: 'Damaged Helmet',
     url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf',
     description: 'PBR textured helmet'
+  },
+  {
+    id: 'fox',
+    name: 'Animated Fox',
+    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Fox/glTF/Fox.gltf',
+    description: 'Cute animated fox character'
+  },
+  {
+    id: 'brain',
+    name: 'Brain Stem',
+    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/BrainStem/glTF/BrainStem.gltf',
+    description: 'Medical model with animation'
+  },
+  {
+    id: 'lantern',
+    name: 'Lantern',
+    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Lantern/glTF/Lantern.gltf',
+    description: 'Vintage lantern model'
+  },
+  {
+    id: 'buggy',
+    name: 'Moon Buggy',
+    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF/CesiumMilkTruck.gltf',
+    description: 'Classic milk truck'
+  },
+  {
+    id: 'monster',
+    name: 'Monster',
+    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Monster/glTF/Monster.gltf',
+    description: 'Animated monster character'
   }
 ]
 

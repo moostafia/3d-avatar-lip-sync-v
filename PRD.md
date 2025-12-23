@@ -20,18 +20,20 @@ This application requires sophisticated 3D rendering with Three.js, real-time au
 - **Success criteria**: Model renders smoothly at 60fps, bones are properly identified, lighting shows model details clearly
 
 ### Real-Time Audio Capture & Analysis
-- **Functionality**: Capture system audio output using Web Audio API, analyze frequency and amplitude data to drive mouth movements
-- **Purpose**: Creates the lip-sync effect by translating audio characteristics into facial animation
+- **Functionality**: Capture system audio output using Web Audio API, analyze frequency and amplitude data to drive mouth movements, with visual feedback
+- **Purpose**: Creates the lip-sync effect by translating audio characteristics into facial animation, with real-time visualization of audio input
 - **Trigger**: User clicks "Start Audio Capture" button and grants microphone/audio permissions
-- **Progression**: User clicks start → browser requests audio permission → system grants access → audio analyzer begins processing → frequency data extracted → jaw/mouth blend shapes updated per frame
-- **Success criteria**: Mouth movements correlate accurately with audio volume and frequency, latency under 50ms, no audio dropouts
+- **Progression**: User clicks start → browser requests audio permission → system grants access → audio analyzer begins processing → frequency data extracted → jaw/mouth blend shapes updated per frame → visualizer displays animated frequency bars
+- **Success criteria**: Mouth movements correlate accurately with audio volume and frequency, latency under 50ms, no audio dropouts, visualizer responds smoothly to audio
+- **Status**: ✅ Implemented with real-time audio analysis and animated frequency bar visualizer showing 32 bars with smooth interpolation
 
 ### Draggable Floating Widget
-- **Functionality**: Allow the 3D model view to be dragged outside the browser window bounds and positioned anywhere on screen
+- **Functionality**: Allow the 3D model view to be popped out into a draggable floating window that can be positioned anywhere on screen
 - **Purpose**: Enables the avatar to function as a persistent desktop companion during video calls, streaming, or chatbot interactions
-- **Trigger**: User clicks and drags the model preview area
-- **Progression**: User hovers over model → cursor changes to move icon → clicks and drags → window follows cursor in real-time → releases to drop in new position → window stays in position even when browser minimized
-- **Success criteria**: Smooth dragging with no lag, window persists outside browser bounds, respects screen edges, maintains render loop when detached
+- **Trigger**: User clicks "Pop Out" button on the model viewer
+- **Progression**: User clicks pop out → floating window opens → user drags window by title bar → window follows cursor in real-time → releases to drop in new position → window can be minimized or closed
+- **Success criteria**: Smooth dragging with no lag, window can be moved freely around the viewport, respects screen edges, maintains render loop in floating window
+- **Status**: ✅ Implemented with draggable floating window featuring minimize/close controls, smooth animations, and independent rendering
 
 ### Lip-Sync Calibration Controls
 - **Functionality**: Adjustable sliders and inputs for sensitivity, mouth open range, smoothing, and bone weight mapping
@@ -41,11 +43,12 @@ This application requires sophisticated 3D rendering with Three.js, real-time au
 - **Success criteria**: Changes apply in real-time with no delay, settings persist between sessions, preset system works reliably
 
 ### Model Library & Custom URLs
-- **Functionality**: Dropdown selector with 3-5 pre-configured avatar models (ReadyPlayerMe, VRoid, etc.) plus custom URL input for GLTF/GLB files
+- **Functionality**: Dropdown selector with 8 pre-configured avatar models plus custom URL input for GLTF/GLB files
 - **Purpose**: Gives users variety and flexibility to use their own character models
 - **Trigger**: User clicks model selector dropdown or pastes custom URL
-- **Progression**: User clicks dropdown → sees thumbnail previews of models → selects one → model loads with progress indicator → automatic bone detection runs → model appears animated
+- **Progression**: User clicks dropdown → sees list of models → selects one → model loads with progress indicator → automatic bone detection runs → model appears animated
 - **Success criteria**: All preset models load within 3 seconds, custom URLs validate before loading, error handling for malformed files
+- **Status**: ✅ Implemented with 8 diverse preset models including Sci-Fi Robot, Flying Drone, Damaged Helmet, Animated Fox, Brain Stem, Lantern, Moon Buggy, and Monster
 
 ### Control Panel Interface
 - **Functionality**: Main browser window serves as mission control with model selector, audio controls, settings panel, and status indicators

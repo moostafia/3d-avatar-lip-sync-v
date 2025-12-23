@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { AvatarViewer } from './components/AvatarViewer'
+import { AudioVisualizer } from './components/AudioVisualizer'
+import { FloatingWindow } from './components/FloatingWindow'
 import { useAudioAnalyzer } from './hooks/use-audio-analyzer'
 import { MODEL_PRESETS, DEFAULT_SETTINGS, type AudioSettings } from './lib/models'
 import { Button } from './components/ui/button'
@@ -18,7 +20,8 @@ import {
   MicrophoneSlash,
   Cube,
   SlidersHorizontal,
-  WarningCircle
+  WarningCircle,
+  ArrowsOutSimple
 } from '@phosphor-icons/react'
 
 function App() {
@@ -27,6 +30,7 @@ function App() {
   const [customModelUrl, setCustomModelUrl] = useKV('custom-model-url', '')
   const [useCustomModel, setUseCustomModel] = useState(false)
   const [modelLoading, setModelLoading] = useState(false)
+  const [isFloatingOpen, setIsFloatingOpen] = useState(false)
 
   const { audioLevel, isCapturing, error, startCapture, stopCapture } = useAudioAnalyzer()
 
@@ -79,6 +83,13 @@ function App() {
     }
     setModelLoading(true)
     setUseCustomModel(true)
+  }
+
+  const handleOpenFloatingWindow = () => {
+    setIsFloatingOpen(true)
+    toast.success('Floating window opened', {
+      description: 'You can now drag the avatar anywhere on your screen'
+    })
   }
 
   return (
@@ -200,15 +211,22 @@ function App() {
                 </div>
 
                 {isCapturing && (
-                  <div className="space-y-2">
-                    <Label className="text-xs">Audio Level</Label>
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-accent transition-all duration-75"
-                        style={{ width: `${audioLevel * 100}%` }}
-                      />
+                  <>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Audio Level</Label>
+                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-accent transition-all duration-75"
+                          style={{ width: `${audioLevel * 100}%` }}
+                        />
+                      </div>
                     </div>
-                  </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs">Audio Visualizer</Label>
+                      <AudioVisualizer audioLevel={audioLevel} isCapturing={isCapturing} />
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -322,6 +340,17 @@ function App() {
 
           <div className="lg:sticky lg:top-6 h-[600px] lg:h-[calc(100vh-3rem)]">
             <Card className="h-full border-accent/20 overflow-hidden">
+              <div className="absolute top-4 right-4 z-10">
+                <Button
+                  onClick={handleOpenFloatingWindow}
+                  variant="secondary"
+                  size="sm"
+                  className="gap-2 shadow-lg"
+                >
+                  <ArrowsOutSimple size={16} />
+                  Pop Out
+                </Button>
+              </div>
               <AvatarViewer
                 modelUrl={currentModel.url}
                 audioData={audioLevel}
@@ -332,6 +361,22 @@ function App() {
             </Card>
           </div>
         </div>
+
+        <FloatingWindow
+          isOpen={isFloatingOpen}
+          onClose={() => setIsFloatingOpen(false)}
+          title="3D Avatar - Floating View"
+          initialWidth={500}
+          initialHeight={600}
+        >
+          <AvatarViewer
+            modelUrl={currentModel.url}
+            audioData={audioLevel}
+            settings={settings || DEFAULT_SETTINGS}
+            onModelLoad={handleModelLoad}
+            className="w-full h-full"
+          />
+        </FloatingWindow>
       </div>
     </>
   )
