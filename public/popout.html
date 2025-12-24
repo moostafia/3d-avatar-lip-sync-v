@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Avatar - Floating View</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: oklch(0.12 0.01 250);
+            overflow: hidden;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        
+        #avatar-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .control-btn {
+            background: oklch(0.25 0.05 250);
+            border: 1px solid oklch(0.75 0.15 195);
+            color: oklch(0.95 0 0);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .control-btn:hover {
+            background: oklch(0.35 0.05 250);
+            box-shadow: 0 0 8px oklch(0.75 0.15 195 / 0.3);
+        }
+        
+        .info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: oklch(0.60 0.02 250);
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            background: oklch(0.15 0.01 250 / 0.8);
+            padding: 6px 10px;
+            border-radius: 4px;
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button class="control-btn" onclick="window.close()">✕ Close</button>
+    </div>
+    <div id="avatar-container"></div>
+    <div class="info">3D Avatar Lip Sync • Drag this window anywhere</div>
+    
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.175.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.175.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        
+        // Make THREE globally available
+        window.THREE = THREE;
+        
+        // Inline simplified AvatarViewer for popout
+        class AvatarViewer {
+            constructor(container) {
+                this.container = container;
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.model = null;
+                this.mixer = null;
+                this.morphTargets = [];
+                this.currentMouthOpen = 0;
+                this.animationFrame = null;
+                
+                this.settings = {
+                    sensitivity: 2.5,
+                    smoothing: 0.7,
+                    minOpen: 0,
+                    maxOpen: 1
+                };
+                
+                this.audioData = 0;
+                this.modelPresets = {
+                    robot: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMan/glTF/CesiumMan.gltf',
+                    drone: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF/Duck.gltf',
+                    helmet: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf',
+                    fox: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Fox/glTF/Fox.gltf',
+                    brain: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/BrainStem/glTF/BrainStem.gltf',
+                    lantern: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Lantern/glTF/Lantern.gltf',
+                    buggy: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF/CesiumMilkTruck.gltf',
+                    monster: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Monster/glTF/Monster.gltf'
+                };
+                
+                this.initScene();
+            }
+            
+            initScene() {
+                if (!this.container) return;
+                
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0x0a0a0f);
+                
+                this.camera = new THREE.PerspectiveCamera(
+                    45,
+                    this.container.clientWidth / this.container.clientHeight,
+                    0.1,
+                    1000
+                );
+                this.camera.position.set(0, 1.6, 3);
+                this.camera.lookAt(0, 1.6, 0);
+                
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                this.container.appendChild(this.renderer.domElement);
+                
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                this.scene.add(ambientLight);
+                
+                const keyLight = new THREE.DirectionalLight(0xffffff, 1);
+                keyLight.position.set(5, 5, 5);
+                this.scene.add(keyLight);
+                
+                this.animate();
+            }
+            
+            loadModel(modelIdOrUrl) {
+                if (this.model) {
+                    this.scene.remove(this.model);
+                    this.model = null;
+                    this.morphTargets = [];
+                }
+                
+                let modelUrl = modelIdOrUrl;
+                if (this.modelPresets[modelIdOrUrl]) {
+                    modelUrl = this.modelPresets[modelIdOrUrl];
+                }
+                
+                const loader = new GLTFLoader();
+                loader.load(modelUrl, (gltf) => {
+                    const model = gltf.scene;
+                    this.model = model;
+                    this.scene.add(model);
+                    
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    
+                    model.position.x = -center.x;
+                    model.position.y = -center.y;
+                    model.position.z = -center.z;
+                    
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scale = 2 / maxDim;
+                    model.scale.setScalar(scale);
+                    
+                    model.traverse((child) => {
+                        if (child.isMesh && child.morphTargetInfluences) {
+                            this.morphTargets.push(child);
+                        }
+                    });
+                });
+            }
+            
+            animate() {
+                this.animationFrame = requestAnimationFrame(() => this.animate());
+                
+                if (this.model) {
+                    this.model.rotation.y += 0.002;
+                }
+                
+                const targetMouthOpen = Math.min(1, this.audioData * this.settings.sensitivity);
+                this.currentMouthOpen += (targetMouthOpen - this.currentMouthOpen) * (1 - this.settings.smoothing);
+                const mappedValue = this.settings.minOpen + this.currentMouthOpen * (this.settings.maxOpen - this.settings.minOpen);
+                
+                this.morphTargets.forEach((mesh) => {
+                    if (!mesh.morphTargetInfluences || !mesh.morphTargetDictionary) return;
+                    const jawIndex = Object.keys(mesh.morphTargetDictionary).findIndex(
+                        (key) => key.toLowerCase().includes('jaw') || key.toLowerCase().includes('mouth')
+                    );
+                    if (jawIndex !== -1) {
+                        mesh.morphTargetInfluences[jawIndex] = mappedValue;
+                    }
+                });
+                
+                if (this.renderer && this.scene && this.camera) {
+                    this.renderer.render(this.scene, this.camera);
+                }
+            }
+            
+            setAudioData(audioLevel) {
+                this.audioData = audioLevel;
+            }
+            
+            updateSettings(settings) {
+                this.settings = { ...this.settings, ...settings };
+            }
+        }
+        
+        // Initialize
+        let avatarViewer = null;
+        let currentSettings = {
+            sensitivity: 2.5,
+            smoothing: 0.7,
+            minOpen: 0,
+            maxOpen: 1
+        };
+        
+        window.addEventListener('load', () => {
+            const container = document.getElementById('avatar-container');
+            if (container) {
+                avatarViewer = new AvatarViewer(container);
+                avatarViewer.updateSettings(currentSettings);
+                avatarViewer.loadModel('robot');
+            }
+        });
+        
+        // Listen for messages from parent window
+        window.addEventListener('message', (event) => {
+            if (!avatarViewer) return;
+            
+            const { type, level, settings, modelUrl } = event.data;
+            
+            switch (type) {
+                case 'audioLevel':
+                    avatarViewer.setAudioData(level);
+                    break;
+                    
+                case 'settings':
+                    currentSettings = settings;
+                    avatarViewer.updateSettings(settings);
+                    break;
+                    
+                case 'loadModel':
+                    avatarViewer.loadModel(modelUrl);
+                    break;
+            }
+        });
+        
+        // Notify parent that we're ready
+        if (window.opener) {
+            window.opener.postMessage({ type: 'popoutReady' }, '*');
+        }
+    </script>
+    <script>
+        // Initialize avatar viewer for popout window
+        let avatarViewer = null;
+        let currentSettings = {
+            sensitivity: 2.5,
+            smoothing: 0.7,
+            minOpen: 0,
+            maxOpen: 1
+        };
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            const container = document.getElementById('avatar-container');
+            if (container) {
+                avatarViewer = new AvatarViewer(container);
+                avatarViewer.updateSettings(currentSettings);
+                
+                // Load default model
+                avatarViewer.loadModel('robot');
+            }
+        });
+        
+        // Listen for messages from parent window
+        window.addEventListener('message', (event) => {
+            if (!avatarViewer) return;
+            
+            const { type, level, settings, modelUrl } = event.data;
+            
+            switch (type) {
+                case 'audioLevel':
+                    avatarViewer.setAudioData(level);
+                    break;
+                    
+                case 'settings':
+                    currentSettings = settings;
+                    avatarViewer.updateSettings(settings);
+                    break;
+                    
+                case 'loadModel':
+                    avatarViewer.loadModel(modelUrl);
+                    break;
+            }
+        });
+        
+        // Notify parent that we're ready
+        if (window.opener) {
+            window.opener.postMessage({ type: 'popoutReady' }, '*');
+        }
+    </script>
+</body>
+</html>

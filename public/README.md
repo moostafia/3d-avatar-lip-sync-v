@@ -2,7 +2,10 @@
 
 A complete HTML5 application featuring a 3D animated avatar that responds to audio with lip-syncing capabilities. The avatar can float anywhere on the webpage, is draggable, scalable, and movable - similar to a desktop mascot that works on both mobile devices and computers.
 
-![3D Avatar Lip Sync Demo](https://github.com/user-attachments/assets/6c5cb6b6-9f63-4c0e-9114-278bf8c7c7b8)
+![3D Avatar Lip Sync Demo](https://img.shields.io/badge/status-working-success)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
+![Three.js](https://img.shields.io/badge/Three.js-000000?logo=three.js&logoColor=white)
+![Web Audio API](https://img.shields.io/badge/Web%20Audio%20API-FF6600?logo=mozilla&logoColor=white)
 
 ## 🌟 Features
 
@@ -19,33 +22,43 @@ A complete HTML5 application featuring a 3D animated avatar that responds to aud
 - **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
 - **Dark Sci-Fi Theme**: Beautiful, modern UI with cyan accents
 
+### Technical Features
+
+- Pure HTML5, CSS3, and Vanilla JavaScript
+- Three.js for WebGL rendering
+- Web Audio API for audio capture and analysis
+- Morph target-based facial animation
+- Local storage for settings persistence
+- Cross-browser compatible
+- No build process required for standalone version
+
 ## 🚀 Quick Start
 
-### Option 1: Standalone Version (Recommended for Production)
+### Standalone Version (No Build Required)
 
-The `public/` folder contains a complete standalone HTML5 application that works in any modern browser:
+1. Open the `public/index.html` file in any modern browser
+2. That's it! The application will run directly in your browser
+
+Or serve it using a simple HTTP server:
 
 ```bash
-# Serve the public folder with any HTTP server
-cd public
-
 # Using Python
+cd public
 python -m http.server 8000
 
 # Using Node.js (http-server)
-npx http-server -p 8000
+npx http-server public -p 8000
 
 # Using PHP
+cd public
 php -S localhost:8000
 ```
 
 Then open `http://localhost:8000` in your browser.
 
-**Note**: For full functionality with 3D models, you'll need internet access to load Three.js from CDN and GLTF models from GitHub.
+### React Version (With Build Process)
 
-### Option 2: React Development Version
-
-For development with hot reload and the full React toolchain:
+If you want to use the React version with hot reload:
 
 ```bash
 # Install dependencies
@@ -88,27 +101,47 @@ npm run build
 - **Minimum Open (0% - 50%)**: Base mouth opening when idle
 - **Maximum Open (50% - 100%)**: Maximum mouth opening at peak volume
 
+### Keyboard Shortcuts
+
+- **Enter** in custom URL field: Load model
+- **ESC** (on floating window): Close floating window
+
+## 🎨 Customization
+
+### Adding Your Own Models
+
+1. Host your GLTF/GLB model file online (GitHub, CDN, etc.)
+2. Paste the URL in the "Custom Model URL" field
+3. Click "Load"
+
+**Model Requirements:**
+- Format: GLTF (.gltf) or GLB (.glb)
+- Recommended: Models with morph targets for jaw/mouth
+- Size: Keep under 10MB for best performance
+
+### Styling
+
+The application uses CSS custom properties for easy theming. Edit `style.css`:
+
+```css
+:root {
+    --accent: oklch(0.75 0.15 195);  /* Change accent color */
+    --background: oklch(0.12 0.01 250);  /* Change background */
+    --foreground: oklch(0.95 0 0);  /* Change text color */
+}
+```
+
 ## 🛠️ Technical Details
 
 ### File Structure
 
 ```
-├── public/                 # Standalone HTML5 application
-│   ├── index.html         # Main HTML structure and UI
-│   ├── style.css          # Complete styling and animations
-│   ├── app.js             # Combined application (ES modules)
-│   ├── audio.js           # Web Audio API (standalone)
-│   ├── avatar.js          # Three.js rendering (standalone)
-│   ├── controls.js        # UI controls (standalone)
-│   ├── popout.html        # Pop-out window page
-│   └── README.md          # Standalone version documentation
-├── src/                   # React application source
-│   ├── App.tsx            # Main React component
-│   ├── components/        # React components
-│   ├── hooks/             # Custom React hooks
-│   └── lib/               # Utilities and models
-├── package.json           # Node.js dependencies
-└── README.md              # This file
+public/
+├── index.html      # Main HTML structure and UI
+├── style.css       # Complete styling and animations
+├── audio.js        # Web Audio API and audio analysis
+├── avatar.js       # Three.js 3D rendering and lip-sync
+└── controls.js     # UI controls and event handling
 ```
 
 ### Browser Compatibility
@@ -133,29 +166,53 @@ npm run build
 - Microphone access only when explicitly granted
 - Settings stored locally in browser
 
-## 🎨 Customization
+## 📋 API Reference
 
-### Adding Your Own Models
+### AudioAnalyzer Class
 
-1. Host your GLTF/GLB model file online (GitHub, CDN, etc.)
-2. Paste the URL in the "Custom Model URL" field
-3. Click "Load"
+```javascript
+const analyzer = new AudioAnalyzer();
 
-**Model Requirements:**
-- Format: GLTF (.gltf) or GLB (.glb)
-- Recommended: Models with morph targets for jaw/mouth
-- Size: Keep under 10MB for best performance
+// Start audio capture
+await analyzer.startCapture();
 
-### Styling
+// Stop audio capture
+analyzer.stopCapture();
 
-The application uses CSS custom properties for easy theming. Edit `public/style.css`:
+// Setup visualizer
+analyzer.setupVisualizer(canvasElement);
 
-```css
-:root {
-    --accent: oklch(0.75 0.15 195);  /* Change accent color */
-    --background: oklch(0.12 0.01 250);  /* Change background */
-    --foreground: oklch(0.95 0 0);  /* Change text color */
-}
+// Set callbacks
+analyzer.onAudioLevelChange = (level) => { /* ... */ };
+analyzer.onError = (error) => { /* ... */ };
+analyzer.onStatusChange = (isCapturing) => { /* ... */ };
+```
+
+### AvatarViewer Class
+
+```javascript
+const viewer = new AvatarViewer(containerElement);
+
+// Load model
+viewer.loadModel('robot');  // Preset
+viewer.loadModel('https://example.com/model.gltf');  // Custom URL
+
+// Update audio data
+viewer.setAudioData(0.5);
+
+// Update settings
+viewer.updateSettings({
+    sensitivity: 2.5,
+    smoothing: 0.7,
+    minOpen: 0,
+    maxOpen: 1
+});
+
+// Set callback
+viewer.onModelLoad = (success) => { /* ... */ };
+
+// Dispose resources
+viewer.dispose();
 ```
 
 ## 🐛 Troubleshooting
@@ -191,6 +248,20 @@ The application uses CSS custom properties for easy theming. Edit `public/style.
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+### Development
+
+```bash
+# Clone the repository
+git clone https://github.com/moostafia/3d-avatar-lip-sync-v.git
+
+# For standalone version - no setup needed, just open public/index.html
+
+# For React version
+cd 3d-avatar-lip-sync-v
+npm install
+npm run dev
+```
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -200,13 +271,23 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Three.js](https://threejs.org/) - 3D graphics library
 - [Khronos Group](https://github.com/KhronosGroup/glTF-Sample-Models) - Sample GLTF models
 - [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) - Audio processing
-- [GitHub Spark](https://githubnext.com/projects/github-spark) - Development platform
 
 ## 📞 Support
 
 - 🐛 [Report a Bug](https://github.com/moostafia/3d-avatar-lip-sync-v/issues)
 - 💡 [Request a Feature](https://github.com/moostafia/3d-avatar-lip-sync-v/issues)
 - 📧 Contact: [GitHub Profile](https://github.com/moostafia)
+
+## 🎯 Roadmap
+
+- [ ] Additional model presets
+- [ ] Voice activity detection
+- [ ] Multiple language support
+- [ ] Export recorded animations
+- [ ] VRM model support
+- [ ] Facial expression controls
+- [ ] Background customization
+- [ ] Screen capture audio (desktop audio)
 
 ---
 
