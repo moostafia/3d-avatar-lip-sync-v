@@ -1,3 +1,9 @@
+// Import models as assets
+import robotModel from '../assets/models/robot.glb?url'
+import duckModel from '../assets/models/duck.glb?url'
+import helmetModel from '../assets/models/helmet.glb?url'
+import foxModel from '../assets/models/fox.glb?url'
+
 export interface ModelPreset {
   id: string
   name: string
@@ -9,50 +15,26 @@ export const MODEL_PRESETS: ModelPreset[] = [
   {
     id: 'robot',
     name: 'Sci-Fi Robot',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMan/glTF/CesiumMan.gltf',
+    url: robotModel,
     description: 'Animated humanoid character'
   },
   {
-    id: 'drone',
-    name: 'Flying Drone',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF/Duck.gltf',
-    description: 'Simple animated model'
+    id: 'duck',
+    name: 'Flying Duck',
+    url: duckModel,
+    description: 'Simple animated duck model'
   },
   {
     id: 'helmet',
     name: 'Damaged Helmet',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf',
+    url: helmetModel,
     description: 'PBR textured helmet'
   },
   {
     id: 'fox',
     name: 'Animated Fox',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Fox/glTF/Fox.gltf',
+    url: foxModel,
     description: 'Cute animated fox character'
-  },
-  {
-    id: 'brain',
-    name: 'Brain Stem',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/BrainStem/glTF/BrainStem.gltf',
-    description: 'Medical model with animation'
-  },
-  {
-    id: 'lantern',
-    name: 'Lantern',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Lantern/glTF/Lantern.gltf',
-    description: 'Vintage lantern model'
-  },
-  {
-    id: 'buggy',
-    name: 'Moon Buggy',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF/CesiumMilkTruck.gltf',
-    description: 'Classic milk truck'
-  },
-  {
-    id: 'monster',
-    name: 'Monster',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Monster/glTF/Monster.gltf',
-    description: 'Animated monster character'
   }
 ]
 

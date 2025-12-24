@@ -22,4 +22,6 @@ export default defineConfig({
       '@': resolve(projectRoot, 'src')
     }
   },
+  publicDir: 'public',
+  assetsInclude: ['**/*.glb', '**/*.gltf'],
 });

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useLocalStorage } from './hooks/use-local-storage'
 import { AvatarViewer } from './components/AvatarViewer'
 import { AudioVisualizer } from './components/AudioVisualizer'
 import { FloatingWindow } from './components/FloatingWindow'
@@ -26,9 +26,9 @@ import {
 } from '@phosphor-icons/react'
 
 function App() {
-  const [settings, setSettings] = useKV<AudioSettings>('audio-settings', DEFAULT_SETTINGS)
-  const [selectedModelId, setSelectedModelId] = useKV('selected-model', MODEL_PRESETS[0].id)
-  const [customModelUrl, setCustomModelUrl] = useKV('custom-model-url', '')
+  const [settings, setSettings] = useLocalStorage<AudioSettings>('audio-settings', DEFAULT_SETTINGS)
+  const [selectedModelId, setSelectedModelId] = useLocalStorage('selected-model', MODEL_PRESETS[0].id)
+  const [customModelUrl, setCustomModelUrl] = useLocalStorage('custom-model-url', '')
   const [useCustomModel, setUseCustomModel] = useState(false)
   const [modelLoading, setModelLoading] = useState(false)
   const [isFloatingOpen, setIsFloatingOpen] = useState(false)
@@ -98,7 +98,7 @@ function App() {
     openPopout({
       modelUrl: currentModel.url,
       audioData: audioLevel,
-      settings: settings || DEFAULT_SETTINGS,
+      settings: settings,
       onModelLoad: handleModelLoad
     })
     toast.success('Browser window opened', {
@@ -111,7 +111,7 @@ function App() {
       updatePopout({
         modelUrl: currentModel.url,
         audioData: audioLevel,
-        settings: settings || DEFAULT_SETTINGS,
+        settings: settings,
         onModelLoad: handleModelLoad
       })
     }
@@ -273,7 +273,7 @@ function App() {
                         <div className="flex justify-between items-center">
                           <Label htmlFor="sensitivity">Sensitivity</Label>
                           <span className="text-sm font-mono text-accent">
-                            {(settings?.sensitivity ?? DEFAULT_SETTINGS.sensitivity).toFixed(1)}x
+                            {settings.sensitivity.toFixed(1)}x
                           </span>
                         </div>
                         <Slider
@@ -281,8 +281,8 @@ function App() {
                           min={0.5}
                           max={5}
                           step={0.1}
-                          value={[settings?.sensitivity ?? DEFAULT_SETTINGS.sensitivity]}
-                          onValueChange={([value]) => setSettings((prev = DEFAULT_SETTINGS) => ({ ...prev, sensitivity: value }))}
+                          value={[settings.sensitivity]}
+                          onValueChange={([value]) => setSettings(prev => ({ ...prev, sensitivity: value }))}
                         />
                         <p className="text-xs text-muted-foreground">
                           Controls how much the audio affects mouth movement
@@ -293,7 +293,7 @@ function App() {
                         <div className="flex justify-between items-center">
                           <Label htmlFor="smoothing">Smoothing</Label>
                           <span className="text-sm font-mono text-accent">
-                            {((settings?.smoothing ?? DEFAULT_SETTINGS.smoothing) * 100).toFixed(0)}%
+                            {(settings.smoothing * 100).toFixed(0)}%
                           </span>
                         </div>
                         <Slider
@@ -301,8 +301,8 @@ function App() {
                           min={0}
                           max={0.95}
                           step={0.05}
-                          value={[settings?.smoothing ?? DEFAULT_SETTINGS.smoothing]}
-                          onValueChange={([value]) => setSettings((prev = DEFAULT_SETTINGS) => ({ ...prev, smoothing: value }))}
+                          value={[settings.smoothing]}
+                          onValueChange={([value]) => setSettings(prev => ({ ...prev, smoothing: value }))}
                         />
                         <p className="text-xs text-muted-foreground">
                           Reduces jitter for smoother animations
@@ -313,7 +313,7 @@ function App() {
                         <div className="flex justify-between items-center">
                           <Label htmlFor="minOpen">Minimum Open</Label>
                           <span className="text-sm font-mono text-accent">
-                            {((settings?.minOpen ?? DEFAULT_SETTINGS.minOpen) * 100).toFixed(0)}%
+                            {(settings.minOpen * 100).toFixed(0)}%
                           </span>
                         </div>
                         <Slider
@@ -321,8 +321,8 @@ function App() {
                           min={0}
                           max={0.5}
                           step={0.05}
-                          value={[settings?.minOpen ?? DEFAULT_SETTINGS.minOpen]}
-                          onValueChange={([value]) => setSettings((prev = DEFAULT_SETTINGS) => ({ ...prev, minOpen: value }))}
+                          value={[settings.minOpen]}
+                          onValueChange={([value]) => setSettings(prev => ({ ...prev, minOpen: value }))}
                         />
                         <p className="text-xs text-muted-foreground">
                           Minimum mouth opening (idle state)
@@ -333,7 +333,7 @@ function App() {
                         <div className="flex justify-between items-center">
                           <Label htmlFor="maxOpen">Maximum Open</Label>
                           <span className="text-sm font-mono text-accent">
-                            {((settings?.maxOpen ?? DEFAULT_SETTINGS.maxOpen) * 100).toFixed(0)}%
+                            {(settings.maxOpen * 100).toFixed(0)}%
                           </span>
                         </div>
                         <Slider
@@ -341,8 +341,8 @@ function App() {
                           min={0.5}
                           max={1}
                           step={0.05}
-                          value={[settings?.maxOpen ?? DEFAULT_SETTINGS.maxOpen]}
-                          onValueChange={([value]) => setSettings((prev = DEFAULT_SETTINGS) => ({ ...prev, maxOpen: value }))}
+                          value={[settings.maxOpen]}
+                          onValueChange={([value]) => setSettings(prev => ({ ...prev, maxOpen: value }))}
                         />
                         <p className="text-xs text-muted-foreground">
                           Maximum mouth opening at peak volume
@@ -390,7 +390,7 @@ function App() {
               <AvatarViewer
                 modelUrl={currentModel.url}
                 audioData={audioLevel}
-                settings={settings || DEFAULT_SETTINGS}
+                settings={settings}
                 onModelLoad={handleModelLoad}
                 className="w-full h-full"
               />
@@ -408,7 +408,7 @@ function App() {
           <AvatarViewer
             modelUrl={currentModel.url}
             audioData={audioLevel}
-            settings={settings || DEFAULT_SETTINGS}
+            settings={settings}
             onModelLoad={handleModelLoad}
             className="w-full h-full"
           />
