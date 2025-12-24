@@ -1,40 +1,39 @@
-// Import models as assets
-import robotModel from '../assets/models/robot.glb?url'
-import duckModel from '../assets/models/duck.glb?url'
-import helmetModel from '../assets/models/helmet.glb?url'
-import foxModel from '../assets/models/fox.glb?url'
-
 export interface ModelPreset {
   id: string
   name: string
   url: string
   description: string
+  fallback?: boolean
 }
 
 export const MODEL_PRESETS: ModelPreset[] = [
   {
-    id: 'robot',
-    name: 'Sci-Fi Robot',
-    url: robotModel,
-    description: 'Animated humanoid character'
+    id: 'cube',
+    name: 'Simple Cube',
+    url: 'fallback://cube',
+    description: 'Built-in 3D cube with animation',
+    fallback: true
   },
   {
-    id: 'duck',
-    name: 'Flying Duck',
-    url: duckModel,
-    description: 'Simple animated duck model'
+    id: 'sphere',
+    name: 'Simple Sphere',
+    url: 'fallback://sphere',
+    description: 'Built-in 3D sphere with animation',
+    fallback: true
   },
   {
-    id: 'helmet',
-    name: 'Damaged Helmet',
-    url: helmetModel,
-    description: 'PBR textured helmet'
+    id: 'torus',
+    name: 'Simple Torus',
+    url: 'fallback://torus',
+    description: 'Built-in 3D torus with animation',
+    fallback: true
   },
   {
-    id: 'fox',
-    name: 'Animated Fox',
-    url: foxModel,
-    description: 'Cute animated fox character'
+    id: 'cone',
+    name: 'Simple Cone',
+    url: 'fallback://cone',
+    description: 'Built-in 3D cone with animation',
+    fallback: true
   }
 ]
 
