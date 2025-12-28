@@ -71,7 +71,7 @@ export function AvatarViewer({
     }
 
     // If not a 2D model, it's unsupported in this version
-    console.warn('Only 2D avatars are supported. Use modelUrl with "2d://" prefix')
+    console.warn('Only 2D avatars are supported in this version. External GLTF/GLB models are no longer supported. Use modelUrl with "2d://" prefix.')
     onModelLoad?.(false)
   }, [modelUrl, onModelLoad])
 

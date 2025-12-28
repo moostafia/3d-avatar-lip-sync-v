@@ -66,6 +66,7 @@ export class Avatar2DRenderer {
   private blinkTimer: number = 0
   private isBlinking: boolean = false
   private blinkDuration: number = 0
+  private nextBlinkTime: number = 180 // Frames until next blink
 
   constructor(canvas: HTMLCanvasElement, styleId: string) {
     this.canvas = canvas
@@ -82,11 +83,13 @@ export class Avatar2DRenderer {
   private updateBlinking() {
     this.blinkTimer++
     
-    // Random blink every 120-240 frames (2-4 seconds at 60fps)
-    if (!this.isBlinking && this.blinkTimer > Math.random() * 120 + 120) {
+    // Check if it's time to blink
+    if (!this.isBlinking && this.blinkTimer >= this.nextBlinkTime) {
       this.isBlinking = true
       this.blinkDuration = 8 // Blink for ~8 frames
       this.blinkTimer = 0
+      // Schedule next blink for 120-240 frames (2-4 seconds at 60fps)
+      this.nextBlinkTime = Math.floor(Math.random() * 120 + 120)
     }
     
     if (this.isBlinking) {
@@ -94,6 +97,27 @@ export class Avatar2DRenderer {
       if (this.blinkDuration <= 0) {
         this.isBlinking = false
       }
+    }
+  }
+
+  // Helper method to draw rounded rectangle with fallback
+  private drawRoundedRect(x: number, y: number, width: number, height: number, radius: number) {
+    const ctx = this.ctx
+    
+    // Use roundRect if available, otherwise use arc fallback
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(x, y, width, height, radius)
+    } else {
+      // Manual rounded rectangle using arcs
+      ctx.moveTo(x + radius, y)
+      ctx.lineTo(x + width - radius, y)
+      ctx.arcTo(x + width, y, x + width, y + radius, radius)
+      ctx.lineTo(x + width, y + height - radius)
+      ctx.arcTo(x + width, y + height, x + width - radius, y + height, radius)
+      ctx.lineTo(x + radius, y + height)
+      ctx.arcTo(x, y + height, x, y + height - radius, radius)
+      ctx.lineTo(x, y + radius)
+      ctx.arcTo(x, y, x + radius, y, radius)
     }
   }
 
@@ -260,7 +284,7 @@ export class Avatar2DRenderer {
     const cornerRadius = size * 0.2
     
     ctx.beginPath()
-    ctx.roundRect(x - faceWidth / 2, y - faceHeight / 2, faceWidth, faceHeight, cornerRadius)
+    this.drawRoundedRect(x - faceWidth / 2, y - faceHeight / 2, faceWidth, faceHeight, cornerRadius)
     ctx.fill()
     ctx.stroke()
 
