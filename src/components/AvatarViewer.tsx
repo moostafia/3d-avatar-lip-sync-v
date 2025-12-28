@@ -103,6 +103,48 @@ export function AvatarViewer({
       morphTargetsRef.current = []
     }
 
+    // Handle fallback models (built-in geometries)
+    if (modelUrl.startsWith('fallback://')) {
+      const geometryType = modelUrl.replace('fallback://', '')
+      let geometry: THREE.BufferGeometry
+      
+      switch (geometryType) {
+        case 'cube':
+          geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5)
+          break
+        case 'sphere':
+          geometry = new THREE.SphereGeometry(1, 32, 32)
+          break
+        case 'torus':
+          geometry = new THREE.TorusGeometry(0.7, 0.3, 16, 100)
+          break
+        case 'cone':
+          geometry = new THREE.ConeGeometry(0.8, 1.6, 32)
+          break
+        default:
+          geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5)
+      }
+      
+      const material = new THREE.MeshStandardMaterial({
+        color: 0x00ddff,
+        metalness: 0.3,
+        roughness: 0.4,
+        emissive: 0x003344,
+        emissiveIntensity: 0.2
+      })
+      
+      const mesh = new THREE.Mesh(geometry, material)
+      const model = new THREE.Group()
+      model.add(mesh)
+      
+      modelRef.current = model
+      sceneRef.current.add(model)
+      
+      onModelLoad?.(true)
+      return
+    }
+
+    // Handle external GLTF/GLB models
     const loader = new GLTFLoader()
     loader.load(
       modelUrl,
@@ -163,6 +205,27 @@ export function AvatarViewer({
 
       if (modelRef.current) {
         modelRef.current.rotation.y += 0.002
+        
+        // For fallback models, use audio to scale the model
+        if (modelUrl.startsWith('fallback://')) {
+          const targetMouthOpen = Math.min(1, audioData * settings.sensitivity)
+          currentMouthOpenRef.current +=
+            (targetMouthOpen - currentMouthOpenRef.current) * (1 - settings.smoothing)
+          
+          const scaleValue =
+            settings.minOpen + currentMouthOpenRef.current * (settings.maxOpen - settings.minOpen)
+          
+          // Apply scaling to simulate "mouth opening" - scale on Y axis
+          const baseScale = 1.0
+          const minScale = baseScale * (1 - settings.minOpen * 0.3)
+          const maxScale = baseScale * (1 + scaleValue * 0.5)
+          
+          modelRef.current.children.forEach((child) => {
+            if (child instanceof THREE.Mesh) {
+              child.scale.y = minScale + (maxScale - minScale) * scaleValue
+            }
+          })
+        }
       }
 
       const targetMouthOpen = Math.min(1, audioData * settings.sensitivity)
@@ -200,7 +263,7 @@ export function AvatarViewer({
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [audioData, settings])
+  }, [audioData, settings, modelUrl])
 
   return <div ref={containerRef} className={`w-full h-full ${className}`} />
 }

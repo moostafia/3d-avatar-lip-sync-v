@@ -3,56 +3,37 @@ export interface ModelPreset {
   name: string
   url: string
   description: string
+  fallback?: boolean
 }
 
 export const MODEL_PRESETS: ModelPreset[] = [
   {
-    id: 'robot',
-    name: 'Sci-Fi Robot',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMan/glTF/CesiumMan.gltf',
-    description: 'Animated humanoid character'
+    id: 'cube',
+    name: 'Simple Cube',
+    url: 'fallback://cube',
+    description: 'Built-in 3D cube with animation',
+    fallback: true
   },
   {
-    id: 'drone',
-    name: 'Flying Drone',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF/Duck.gltf',
-    description: 'Simple animated model'
+    id: 'sphere',
+    name: 'Simple Sphere',
+    url: 'fallback://sphere',
+    description: 'Built-in 3D sphere with animation',
+    fallback: true
   },
   {
-    id: 'helmet',
-    name: 'Damaged Helmet',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf',
-    description: 'PBR textured helmet'
+    id: 'torus',
+    name: 'Simple Torus',
+    url: 'fallback://torus',
+    description: 'Built-in 3D torus with animation',
+    fallback: true
   },
   {
-    id: 'fox',
-    name: 'Animated Fox',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Fox/glTF/Fox.gltf',
-    description: 'Cute animated fox character'
-  },
-  {
-    id: 'brain',
-    name: 'Brain Stem',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/BrainStem/glTF/BrainStem.gltf',
-    description: 'Medical model with animation'
-  },
-  {
-    id: 'lantern',
-    name: 'Lantern',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Lantern/glTF/Lantern.gltf',
-    description: 'Vintage lantern model'
-  },
-  {
-    id: 'buggy',
-    name: 'Moon Buggy',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF/CesiumMilkTruck.gltf',
-    description: 'Classic milk truck'
-  },
-  {
-    id: 'monster',
-    name: 'Monster',
-    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Monster/glTF/Monster.gltf',
-    description: 'Animated monster character'
+    id: 'cone',
+    name: 'Simple Cone',
+    url: 'fallback://cone',
+    description: 'Built-in 3D cone with animation',
+    fallback: true
   }
 ]
 
