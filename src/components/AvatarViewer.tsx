@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
-import * as THREE from 'three'
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { Avatar2DRenderer } from '../lib/avatar2d'
 
 interface AvatarViewerProps {
   modelUrl: string
@@ -22,237 +21,78 @@ export function AvatarViewer({
   onModelLoad,
   className = ''
 }: AvatarViewerProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const sceneRef = useRef<THREE.Scene | null>(null)
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
-  const modelRef = useRef<THREE.Group | null>(null)
-  const mixerRef = useRef<THREE.AnimationMixer | null>(null)
-  const morphTargetsRef = useRef<THREE.Mesh[]>([])
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const rendererRef = useRef<Avatar2DRenderer | null>(null)
   const currentMouthOpenRef = useRef(0)
   const animationFrameRef = useRef<number | undefined>(undefined)
 
   useEffect(() => {
-    if (!containerRef.current) return
+    if (!canvasRef.current) return
 
-    const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x0a0a0f)
-    sceneRef.current = scene
-
-    const camera = new THREE.PerspectiveCamera(
-      45,
-      containerRef.current.clientWidth / containerRef.current.clientHeight,
-      0.1,
-      1000
-    )
-    camera.position.set(0, 1.6, 3)
-    camera.lookAt(0, 1.6, 0)
-    cameraRef.current = camera
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-    renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight)
-    renderer.setPixelRatio(window.devicePixelRatio)
-    renderer.shadowMap.enabled = true
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap
-    rendererRef.current = renderer
-    containerRef.current.appendChild(renderer.domElement)
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
-    scene.add(ambientLight)
-
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1)
-    keyLight.position.set(5, 5, 5)
-    keyLight.castShadow = true
-    scene.add(keyLight)
-
-    const fillLight = new THREE.DirectionalLight(0x4dd4ff, 0.3)
-    fillLight.position.set(-5, 0, -5)
-    scene.add(fillLight)
-
-    const rimLight = new THREE.DirectionalLight(0x4dd4ff, 0.5)
-    rimLight.position.set(0, 5, -5)
-    scene.add(rimLight)
-
-    const handleResize = () => {
-      if (!containerRef.current || !camera || !renderer) return
-      camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight
-      camera.updateProjectionMatrix()
-      renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight)
+    const canvas = canvasRef.current
+    const resizeCanvas = () => {
+      const container = canvas.parentElement
+      if (container) {
+        canvas.width = container.clientWidth
+        canvas.height = container.clientHeight
+      }
     }
 
-    window.addEventListener('resize', handleResize)
+    resizeCanvas()
+    window.addEventListener('resize', resizeCanvas)
 
     return () => {
-      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('resize', resizeCanvas)
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
       }
-      if (rendererRef.current && containerRef.current) {
-        containerRef.current.removeChild(rendererRef.current.domElement)
-      }
-      rendererRef.current?.dispose()
     }
   }, [])
 
   useEffect(() => {
-    if (!sceneRef.current) return
+    if (!canvasRef.current) return
 
-    if (modelRef.current) {
-      sceneRef.current.remove(modelRef.current)
-      modelRef.current = null
-      morphTargetsRef.current = []
-    }
-
-    // Handle fallback models (built-in geometries)
-    if (modelUrl.startsWith('fallback://')) {
-      const geometryType = modelUrl.replace('fallback://', '')
-      let geometry: THREE.BufferGeometry
+    // Handle 2D avatar models
+    if (modelUrl.startsWith('2d://')) {
+      const styleId = modelUrl.replace('2d://', '')
       
-      switch (geometryType) {
-        case 'cube':
-          geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5)
-          break
-        case 'sphere':
-          geometry = new THREE.SphereGeometry(1, 32, 32)
-          break
-        case 'torus':
-          geometry = new THREE.TorusGeometry(0.7, 0.3, 16, 100)
-          break
-        case 'cone':
-          geometry = new THREE.ConeGeometry(0.8, 1.6, 32)
-          break
-        default:
-          geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5)
+      try {
+        if (!rendererRef.current) {
+          rendererRef.current = new Avatar2DRenderer(canvasRef.current, styleId)
+        } else {
+          rendererRef.current.setStyle(styleId)
+        }
+        onModelLoad?.(true)
+      } catch (error) {
+        console.error('Error creating 2D avatar:', error)
+        onModelLoad?.(false)
       }
-      
-      const material = new THREE.MeshStandardMaterial({
-        color: 0x00ddff,
-        metalness: 0.3,
-        roughness: 0.4,
-        emissive: 0x003344,
-        emissiveIntensity: 0.2
-      })
-      
-      const mesh = new THREE.Mesh(geometry, material)
-      const model = new THREE.Group()
-      model.add(mesh)
-      
-      modelRef.current = model
-      sceneRef.current.add(model)
-      
-      onModelLoad?.(true)
       return
     }
 
-    // Handle external GLTF/GLB models
-    const loader = new GLTFLoader()
-    loader.load(
-      modelUrl,
-      (gltf) => {
-        const model = gltf.scene
-        modelRef.current = model
-        sceneRef.current!.add(model)
-
-        const box = new THREE.Box3().setFromObject(model)
-        const center = box.getCenter(new THREE.Vector3())
-        const size = box.getSize(new THREE.Vector3())
-
-        model.position.x = -center.x
-        model.position.y = -center.y
-        model.position.z = -center.z
-
-        const maxDim = Math.max(size.x, size.y, size.z)
-        const scale = 2 / maxDim
-        model.scale.setScalar(scale)
-
-        model.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh
-            if (mesh.morphTargetInfluences && mesh.morphTargetDictionary) {
-              morphTargetsRef.current.push(mesh)
-            }
-          }
-        })
-
-        if (gltf.animations && gltf.animations.length > 0) {
-          mixerRef.current = new THREE.AnimationMixer(model)
-          const idleAnimation = gltf.animations.find(
-            (clip) => clip.name.toLowerCase().includes('idle') || clip.name.toLowerCase().includes('breath')
-          )
-          if (idleAnimation) {
-            const action = mixerRef.current.clipAction(idleAnimation)
-            action.play()
-          }
-        }
-
-        onModelLoad?.(true)
-      },
-      undefined,
-      (error) => {
-        console.error('Error loading model:', error)
-        onModelLoad?.(false)
-      }
-    )
+    // If not a 2D model, it's unsupported in this version
+    console.warn('Only 2D avatars are supported. Use modelUrl with "2d://" prefix')
+    onModelLoad?.(false)
   }, [modelUrl, onModelLoad])
 
   useEffect(() => {
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate)
 
-      if (mixerRef.current) {
-        mixerRef.current.update(0.016)
-      }
-
-      if (modelRef.current) {
-        modelRef.current.rotation.y += 0.002
+      if (rendererRef.current) {
+        // Calculate target mouth open based on audio
+        const targetMouthOpen = Math.min(1, audioData * settings.sensitivity)
         
-        // For fallback models, use audio to scale the model
-        if (modelUrl.startsWith('fallback://')) {
-          const targetMouthOpen = Math.min(1, audioData * settings.sensitivity)
-          currentMouthOpenRef.current +=
-            (targetMouthOpen - currentMouthOpenRef.current) * (1 - settings.smoothing)
-          
-          const scaleValue =
-            settings.minOpen + currentMouthOpenRef.current * (settings.maxOpen - settings.minOpen)
-          
-          // Apply scaling to simulate "mouth opening" - scale on Y axis
-          const baseScale = 1.0
-          const minScale = baseScale * (1 - settings.minOpen * 0.3)
-          const maxScale = baseScale * (1 + scaleValue * 0.5)
-          
-          modelRef.current.children.forEach((child) => {
-            if (child instanceof THREE.Mesh) {
-              child.scale.y = minScale + (maxScale - minScale) * scaleValue
-            }
-          })
-        }
-      }
+        // Smooth transition
+        currentMouthOpenRef.current +=
+          (targetMouthOpen - currentMouthOpenRef.current) * (1 - settings.smoothing)
 
-      const targetMouthOpen = Math.min(1, audioData * settings.sensitivity)
-      currentMouthOpenRef.current +=
-        (targetMouthOpen - currentMouthOpenRef.current) * (1 - settings.smoothing)
+        // Map to min/max range
+        const mappedValue =
+          settings.minOpen + currentMouthOpenRef.current * (settings.maxOpen - settings.minOpen)
 
-      const mappedValue =
-        settings.minOpen + currentMouthOpenRef.current * (settings.maxOpen - settings.minOpen)
-
-      morphTargetsRef.current.forEach((mesh) => {
-        if (!mesh.morphTargetInfluences || !mesh.morphTargetDictionary) return
-
-        const jawIndex = Object.keys(mesh.morphTargetDictionary).findIndex(
-          (key) =>
-            key.toLowerCase().includes('jaw') ||
-            key.toLowerCase().includes('mouth') ||
-            key.toLowerCase().includes('viseme_aa') ||
-            key.toLowerCase().includes('a')
-        )
-
-        if (jawIndex !== -1 && mesh.morphTargetInfluences[jawIndex] !== undefined) {
-          mesh.morphTargetInfluences[jawIndex] = mappedValue
-        }
-      })
-
-      if (rendererRef.current && sceneRef.current && cameraRef.current) {
-        rendererRef.current.render(sceneRef.current, cameraRef.current)
+        // Render the 2D avatar
+        rendererRef.current.render(mappedValue)
       }
     }
 
@@ -263,7 +103,12 @@ export function AvatarViewer({
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [audioData, settings, modelUrl])
+  }, [audioData, settings])
 
-  return <div ref={containerRef} className={`w-full h-full ${className}`} />
+  return (
+    <canvas
+      ref={canvasRef}
+      className={`w-full h-full bg-[#0a0a0f] ${className}`}
+    />
+  )
 }

@@ -125,10 +125,10 @@ function App() {
           <div className="space-y-6">
             <div>
               <h1 className="text-4xl font-bold tracking-tight text-accent mb-2">
-                3D Avatar Lip Sync
+                2D Avatar Lip Sync
               </h1>
               <p className="text-muted-foreground">
-                Real-time audio-driven facial animation for your digital characters
+                Real-time audio-driven animated talking head for your digital characters
               </p>
             </div>
 
@@ -145,7 +145,7 @@ function App() {
                     </Badge>
                   )}
                 </div>
-                <CardDescription>Choose a preset model or load your own GLTF/GLB file</CardDescription>
+                <CardDescription>Choose a preset 2D avatar style or load a custom model</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -401,7 +401,7 @@ function App() {
         <FloatingWindow
           isOpen={isFloatingOpen}
           onClose={() => setIsFloatingOpen(false)}
-          title="3D Avatar - Floating View"
+          title="2D Avatar - Floating View"
           initialWidth={500}
           initialHeight={600}
         >

@@ -8,31 +8,31 @@ export interface ModelPreset {
 
 export const MODEL_PRESETS: ModelPreset[] = [
   {
-    id: 'cube',
-    name: 'Simple Cube',
-    url: 'fallback://cube',
-    description: 'Built-in 3D cube with animation',
+    id: 'circle',
+    name: 'Simple Circle Face',
+    url: '2d://circle',
+    description: 'Basic circular face with simple features',
     fallback: true
   },
   {
-    id: 'sphere',
-    name: 'Simple Sphere',
-    url: 'fallback://sphere',
-    description: 'Built-in 3D sphere with animation',
+    id: 'cartoon',
+    name: 'Cartoon Character',
+    url: '2d://cartoon',
+    description: 'Playful cartoon-style avatar',
     fallback: true
   },
   {
-    id: 'torus',
-    name: 'Simple Torus',
-    url: 'fallback://torus',
-    description: 'Built-in 3D torus with animation',
+    id: 'robot',
+    name: 'Robot/Tech Style',
+    url: '2d://robot',
+    description: 'Futuristic robot-themed avatar',
     fallback: true
   },
   {
-    id: 'cone',
-    name: 'Simple Cone',
-    url: 'fallback://cone',
-    description: 'Built-in 3D cone with animation',
+    id: 'minimalist',
+    name: 'Minimalist/Abstract',
+    url: '2d://minimalist',
+    description: 'Clean, minimal design',
     fallback: true
   }
 ]
