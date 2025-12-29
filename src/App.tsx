@@ -10,7 +10,6 @@ import { Button } from './components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card'
 import { Label } from './components/ui/label'
 import { Slider } from './components/ui/slider'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select'
 import { Input } from './components/ui/input'
 import { Badge } from './components/ui/badge'
 import { Separator } from './components/ui/separator'
@@ -27,7 +26,6 @@ import {
 
 function App() {
   const [settings, setSettings] = useLocalStorage<AudioSettings>('audio-settings', DEFAULT_SETTINGS)
-  const [selectedModelId, setSelectedModelId] = useLocalStorage('selected-model', MODEL_PRESETS[0].id)
   const [customModelUrl, setCustomModelUrl] = useLocalStorage('custom-model-url', '')
   const [useCustomModel, setUseCustomModel] = useState(false)
   const [modelLoading, setModelLoading] = useState(false)
@@ -37,8 +35,8 @@ function App() {
   const { isOpen: isPopoutOpen, openPopout, updatePopout, closePopout } = usePopoutWindow()
 
   const currentModel = useCustomModel && customModelUrl
-    ? { url: customModelUrl, name: 'Custom Model' }
-    : MODEL_PRESETS.find(m => m.id === selectedModelId) || MODEL_PRESETS[0]
+    ? { url: customModelUrl, name: 'Custom Model', description: 'Custom GLTF/GLB model' }
+    : MODEL_PRESETS[0]
 
   const handleStartCapture = async () => {
     await startCapture()
@@ -63,12 +61,6 @@ function App() {
         description: 'Please check the URL or try another model'
       })
     }
-  }
-
-  const handleModelChange = (modelId: string) => {
-    setModelLoading(true)
-    setSelectedModelId(modelId)
-    setUseCustomModel(false)
   }
 
   const handleCustomModelLoad = () => {
@@ -137,7 +129,7 @@ function App() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <Cube className="text-accent" size={24} />
-                    Model Selection
+                    Avatar Model
                   </CardTitle>
                   {modelLoading && (
                     <Badge variant="secondary" className="animate-shimmer">
@@ -145,30 +137,22 @@ function App() {
                     </Badge>
                   )}
                 </div>
-                <CardDescription>Choose a preset model or load your own GLTF/GLB file</CardDescription>
+                <CardDescription>Ready Player Me 3D avatar with lip sync</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="model-select">Preset Models</Label>
-                  <Select value={selectedModelId} onValueChange={handleModelChange}>
-                    <SelectTrigger id="model-select">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MODEL_PRESETS.map((model) => (
-                        <SelectItem key={model.id} value={model.id}>
-                          {model.name} - {model.description}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-sm">Current Model</Label>
+                  <div className="p-3 rounded-md bg-secondary/50 border border-accent/20">
+                    <p className="font-medium text-sm">{currentModel.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{currentModel.description}</p>
+                  </div>
                 </div>
 
                 <Separator />
 
                 <div className="space-y-2">
                   <Label htmlFor="custom-url" className="font-mono text-xs">
-                    Custom Model URL
+                    Custom Model URL (Optional)
                   </Label>
                   <div className="flex gap-2">
                     <Input
@@ -183,6 +167,9 @@ function App() {
                       Load
                     </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Load your own GLTF/GLB model with ARKit blend shapes
+                  </p>
                 </div>
               </CardContent>
             </Card>

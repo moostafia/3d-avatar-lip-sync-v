@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
 interface AvatarViewerProps {
   modelUrl: string
@@ -15,6 +16,17 @@ interface AvatarViewerProps {
   className?: string
 }
 
+interface MorphTargetIndices {
+  mesh: THREE.SkinnedMesh
+  jawOpen?: number
+  viseme_aa?: number
+  viseme_O?: number
+  viseme_E?: number
+  viseme_I?: number
+  viseme_U?: number
+  mouthSmile?: number
+}
+
 export function AvatarViewer({
   modelUrl,
   audioData,
@@ -26,9 +38,10 @@ export function AvatarViewer({
   const sceneRef = useRef<THREE.Scene | null>(null)
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
+  const controlsRef = useRef<OrbitControls | null>(null)
   const modelRef = useRef<THREE.Group | null>(null)
   const mixerRef = useRef<THREE.AnimationMixer | null>(null)
-  const morphTargetsRef = useRef<THREE.Mesh[]>([])
+  const morphTargetsRef = useRef<MorphTargetIndices[]>([])
   const currentMouthOpenRef = useRef(0)
   const animationFrameRef = useRef<number | undefined>(undefined)
 
@@ -73,6 +86,16 @@ export function AvatarViewer({
     rimLight.position.set(0, 5, -5)
     scene.add(rimLight)
 
+    // Add OrbitControls for camera manipulation
+    const controls = new OrbitControls(camera, renderer.domElement)
+    controls.enableDamping = true
+    controls.dampingFactor = 0.05
+    controls.minDistance = 1
+    controls.maxDistance = 10
+    controls.target.set(0, 1.6, 0)
+    controls.update()
+    controlsRef.current = controls
+
     const handleResize = () => {
       if (!containerRef.current || !camera || !renderer) return
       camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight
@@ -86,6 +109,9 @@ export function AvatarViewer({
       window.removeEventListener('resize', handleResize)
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
+      }
+      if (controlsRef.current) {
+        controlsRef.current.dispose()
       }
       if (rendererRef.current && containerRef.current) {
         containerRef.current.removeChild(rendererRef.current.domElement)
@@ -103,48 +129,7 @@ export function AvatarViewer({
       morphTargetsRef.current = []
     }
 
-    // Handle fallback models (built-in geometries)
-    if (modelUrl.startsWith('fallback://')) {
-      const geometryType = modelUrl.replace('fallback://', '')
-      let geometry: THREE.BufferGeometry
-      
-      switch (geometryType) {
-        case 'cube':
-          geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5)
-          break
-        case 'sphere':
-          geometry = new THREE.SphereGeometry(1, 32, 32)
-          break
-        case 'torus':
-          geometry = new THREE.TorusGeometry(0.7, 0.3, 16, 100)
-          break
-        case 'cone':
-          geometry = new THREE.ConeGeometry(0.8, 1.6, 32)
-          break
-        default:
-          geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5)
-      }
-      
-      const material = new THREE.MeshStandardMaterial({
-        color: 0x00ddff,
-        metalness: 0.3,
-        roughness: 0.4,
-        emissive: 0x003344,
-        emissiveIntensity: 0.2
-      })
-      
-      const mesh = new THREE.Mesh(geometry, material)
-      const model = new THREE.Group()
-      model.add(mesh)
-      
-      modelRef.current = model
-      sceneRef.current.add(model)
-      
-      onModelLoad?.(true)
-      return
-    }
-
-    // Handle external GLTF/GLB models
+    // Load GLTF/GLB model
     const loader = new GLTFLoader()
     loader.load(
       modelUrl,
@@ -153,6 +138,7 @@ export function AvatarViewer({
         modelRef.current = model
         sceneRef.current!.add(model)
 
+        // Center and scale the model
         const box = new THREE.Box3().setFromObject(model)
         const center = box.getCenter(new THREE.Vector3())
         const size = box.getSize(new THREE.Vector3())
@@ -165,15 +151,27 @@ export function AvatarViewer({
         const scale = 2 / maxDim
         model.scale.setScalar(scale)
 
+        // Find and store references to meshes with morph targets (Ready Player Me blend shapes)
         model.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh
-            if (mesh.morphTargetInfluences && mesh.morphTargetDictionary) {
-              morphTargetsRef.current.push(mesh)
-            }
+          if (child instanceof THREE.SkinnedMesh && child.morphTargetDictionary) {
+            const dict = child.morphTargetDictionary
+            const morphTarget: MorphTargetIndices = { mesh: child }
+
+            // Map ARKit-compatible blend shapes
+            if (dict['jawOpen'] !== undefined) morphTarget.jawOpen = dict['jawOpen']
+            if (dict['viseme_aa'] !== undefined) morphTarget.viseme_aa = dict['viseme_aa']
+            if (dict['viseme_O'] !== undefined) morphTarget.viseme_O = dict['viseme_O']
+            if (dict['viseme_E'] !== undefined) morphTarget.viseme_E = dict['viseme_E']
+            if (dict['viseme_I'] !== undefined) morphTarget.viseme_I = dict['viseme_I']
+            if (dict['viseme_U'] !== undefined) morphTarget.viseme_U = dict['viseme_U']
+            if (dict['mouthSmile'] !== undefined) morphTarget.mouthSmile = dict['mouthSmile']
+
+            morphTargetsRef.current.push(morphTarget)
+            console.log('Found morph targets:', Object.keys(dict))
           }
         })
 
+        // Play idle/breathing animations if available
         if (gltf.animations && gltf.animations.length > 0) {
           mixerRef.current = new THREE.AnimationMixer(model)
           const idleAnimation = gltf.animations.find(
@@ -199,55 +197,56 @@ export function AvatarViewer({
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate)
 
+      // Update animation mixer for idle animations
       if (mixerRef.current) {
         mixerRef.current.update(0.016)
       }
 
-      if (modelRef.current) {
-        modelRef.current.rotation.y += 0.002
-        
-        // For fallback models, use audio to scale the model
-        if (modelUrl.startsWith('fallback://')) {
-          const targetMouthOpen = Math.min(1, audioData * settings.sensitivity)
-          currentMouthOpenRef.current +=
-            (targetMouthOpen - currentMouthOpenRef.current) * (1 - settings.smoothing)
-          
-          const scaleValue =
-            settings.minOpen + currentMouthOpenRef.current * (settings.maxOpen - settings.minOpen)
-          
-          // Apply scaling to simulate "mouth opening" - scale on Y axis
-          const baseScale = 1.0
-          const minScale = baseScale * (1 - settings.minOpen * 0.3)
-          const maxScale = baseScale * (1 + scaleValue * 0.5)
-          
-          modelRef.current.children.forEach((child) => {
-            if (child instanceof THREE.Mesh) {
-              child.scale.y = minScale + (maxScale - minScale) * scaleValue
-            }
-          })
-        }
+      // Update orbit controls
+      if (controlsRef.current) {
+        controlsRef.current.update()
       }
 
+      // Calculate smoothed mouth opening value
       const targetMouthOpen = Math.min(1, audioData * settings.sensitivity)
       currentMouthOpenRef.current +=
         (targetMouthOpen - currentMouthOpenRef.current) * (1 - settings.smoothing)
 
-      const mappedValue =
+      const mouthOpen =
         settings.minOpen + currentMouthOpenRef.current * (settings.maxOpen - settings.minOpen)
 
-      morphTargetsRef.current.forEach((mesh) => {
-        if (!mesh.morphTargetInfluences || !mesh.morphTargetDictionary) return
+      // Apply morph targets to Ready Player Me avatar
+      morphTargetsRef.current.forEach((morphTarget) => {
+        const influences = morphTarget.mesh.morphTargetInfluences
+        if (!influences) return
 
-        const jawIndex = Object.keys(mesh.morphTargetDictionary).findIndex(
-          (key) =>
-            key.toLowerCase().includes('jaw') ||
-            key.toLowerCase().includes('mouth') ||
-            key.toLowerCase().includes('viseme_aa') ||
-            key.toLowerCase().includes('a')
-        )
+        // Primary mouth opening - jawOpen and viseme_aa
+        if (morphTarget.jawOpen !== undefined) {
+          influences[morphTarget.jawOpen] = mouthOpen * 0.7
+        }
+        if (morphTarget.viseme_aa !== undefined) {
+          influences[morphTarget.viseme_aa] = mouthOpen
+        }
 
-        if (jawIndex !== -1 && mesh.morphTargetInfluences[jawIndex] !== undefined) {
-          mesh.morphTargetInfluences[jawIndex] = mappedValue
+        // Vary between different visemes based on audio level for more natural movement
+        const visemeVariation = Math.sin(Date.now() * 0.003) * 0.5 + 0.5
+        
+        if (morphTarget.viseme_O !== undefined) {
+          influences[morphTarget.viseme_O] = mouthOpen * 0.3 * visemeVariation
+        }
+        if (morphTarget.viseme_E !== undefined) {
+          influences[morphTarget.viseme_E] = mouthOpen * 0.2 * (1 - visemeVariation)
+        }
+        if (morphTarget.viseme_I !== undefined) {
+          influences[morphTarget.viseme_I] = mouthOpen * 0.15
+        }
+        if (morphTarget.viseme_U !== undefined) {
+          influences[morphTarget.viseme_U] = mouthOpen * 0.25 * visemeVariation
+        }
+
+        // Add slight smile when speaking
+        if (morphTarget.mouthSmile !== undefined) {
+          influences[morphTarget.mouthSmile] = mouthOpen * 0.1
         }
       })
 
@@ -263,7 +262,7 @@ export function AvatarViewer({
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [audioData, settings, modelUrl])
+  }, [audioData, settings])
 
   return <div ref={containerRef} className={`w-full h-full ${className}`} />
 }

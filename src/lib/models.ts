@@ -3,37 +3,14 @@ export interface ModelPreset {
   name: string
   url: string
   description: string
-  fallback?: boolean
 }
 
 export const MODEL_PRESETS: ModelPreset[] = [
   {
-    id: 'cube',
-    name: 'Simple Cube',
-    url: 'fallback://cube',
-    description: 'Built-in 3D cube with animation',
-    fallback: true
-  },
-  {
-    id: 'sphere',
-    name: 'Simple Sphere',
-    url: 'fallback://sphere',
-    description: 'Built-in 3D sphere with animation',
-    fallback: true
-  },
-  {
-    id: 'torus',
-    name: 'Simple Torus',
-    url: 'fallback://torus',
-    description: 'Built-in 3D torus with animation',
-    fallback: true
-  },
-  {
-    id: 'cone',
-    name: 'Simple Cone',
-    url: 'fallback://cone',
-    description: 'Built-in 3D cone with animation',
-    fallback: true
+    id: 'readyplayerme',
+    name: 'Ready Player Me Avatar',
+    url: 'https://models.readyplayer.me/6951ba830ca398caea9fc30c.glb',
+    description: '3D avatar with ARKit-compatible blend shapes for lip sync'
   }
 ]
 
