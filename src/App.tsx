@@ -26,7 +26,6 @@ import {
 
 function App() {
   const [settings, setSettings] = useLocalStorage<AudioSettings>('audio-settings', DEFAULT_SETTINGS)
-  const [selectedModelId, setSelectedModelId] = useLocalStorage('selected-model', MODEL_PRESETS[0].id)
   const [customModelUrl, setCustomModelUrl] = useLocalStorage('custom-model-url', '')
   const [useCustomModel, setUseCustomModel] = useState(false)
   const [modelLoading, setModelLoading] = useState(false)
@@ -36,8 +35,8 @@ function App() {
   const { isOpen: isPopoutOpen, openPopout, updatePopout, closePopout } = usePopoutWindow()
 
   const currentModel = useCustomModel && customModelUrl
-    ? { url: customModelUrl, name: 'Custom Model' }
-    : MODEL_PRESETS.find(m => m.id === selectedModelId) || MODEL_PRESETS[0]
+    ? { url: customModelUrl, name: 'Custom Model', description: 'Custom GLTF/GLB model' }
+    : MODEL_PRESETS[0]
 
   const handleStartCapture = async () => {
     await startCapture()
@@ -62,12 +61,6 @@ function App() {
         description: 'Please check the URL or try another model'
       })
     }
-  }
-
-  const handleModelChange = (modelId: string) => {
-    setModelLoading(true)
-    setSelectedModelId(modelId)
-    setUseCustomModel(false)
   }
 
   const handleCustomModelLoad = () => {

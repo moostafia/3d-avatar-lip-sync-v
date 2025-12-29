@@ -16,6 +16,17 @@ interface AvatarViewerProps {
   className?: string
 }
 
+interface MorphTargetIndices {
+  mesh: THREE.SkinnedMesh
+  jawOpen?: number
+  viseme_aa?: number
+  viseme_O?: number
+  viseme_E?: number
+  viseme_I?: number
+  viseme_U?: number
+  mouthSmile?: number
+}
+
 export function AvatarViewer({
   modelUrl,
   audioData,
@@ -30,16 +41,7 @@ export function AvatarViewer({
   const controlsRef = useRef<OrbitControls | null>(null)
   const modelRef = useRef<THREE.Group | null>(null)
   const mixerRef = useRef<THREE.AnimationMixer | null>(null)
-  const morphTargetsRef = useRef<{
-    mesh: THREE.SkinnedMesh
-    jawOpen?: number
-    viseme_aa?: number
-    viseme_O?: number
-    viseme_E?: number
-    viseme_I?: number
-    viseme_U?: number
-    mouthSmile?: number
-  }[]>([])
+  const morphTargetsRef = useRef<MorphTargetIndices[]>([])
   const currentMouthOpenRef = useRef(0)
   const animationFrameRef = useRef<number | undefined>(undefined)
 
@@ -153,7 +155,7 @@ export function AvatarViewer({
         model.traverse((child) => {
           if (child instanceof THREE.SkinnedMesh && child.morphTargetDictionary) {
             const dict = child.morphTargetDictionary
-            const morphTarget: any = { mesh: child }
+            const morphTarget: MorphTargetIndices = { mesh: child }
 
             // Map ARKit-compatible blend shapes
             if (dict['jawOpen'] !== undefined) morphTarget.jawOpen = dict['jawOpen']
